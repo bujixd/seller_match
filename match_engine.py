@@ -7,16 +7,19 @@ import json
 from pprint import pprint
 from collections import defaultdict
 import getopt, sys
+from itertools import combinations
 
+'''
 class BuyersWithScore(object):
     
     def __init__(self, buyer_id, score):
         self.buyer_id = buyer_id
         self.score = score
-
+'''
 
 class MatchBuyerExecutor(object):
     
+    # scoring number for industry and geo matchs
     industry_match = 6
     geo_match = 4
     
@@ -31,29 +34,33 @@ class MatchBuyerExecutor(object):
 
         # parse data into a dict
         # key is geo or industry id
-        # value is lists of seller_id or buyer_id that related to this geo or industry id
-        # e.g. 
-        
+        # value is lists of seller_id and buyer_id that related to this geo or industry id
+        # e.g. {101: [{buyer: [BuyerWithScore,...]},[{seller: [6372c203-f540-4208-8def-94edfc8257e8, ....]}]]}
+        # BuyerWithScore is an object that store buyer_id and scoring number
         for x in data:
             MatchBuyerExecutor.json_decode(self, x, True)
             MatchBuyerExecutor.json_decode(self, x, False)
         
-        
+        # result dict
+        # key is seller_id
+        # value is dict of matched buyer_id and scores
+         
         results = defaultdict(list)
-        
         for _, buyer_seller_ids in self.geo_indstury_ids.items():
             for (buyer_score, seller_id) in [(x, y) for x in buyer_seller_ids['buyers'] for y in buyer_seller_ids['seller']]:
                 for i in range(len(results[seller_id])):
-                    if buyer_score.buyer_id in results[seller_id][i]['id']:
-                        results[seller_id][i]['score'] += buyer_score.score 
+                    if buyer_score[0] in results[seller_id][i]['id']:
+                        results[seller_id][i]['score'] += buyer_score[1]
                         break
                 else:
-                    results[seller_id].append({'id' : buyer_score.buyer_id, 'score' : buyer_score.score})
+                    results[seller_id].append({'id' : buyer_score[0], 'score' : buyer_score[1]})
         
         
                 
         self.result = results
+        # rank the result by scores
         MatchBuyerExecutor.rank_result(self)
+    
     
     def json_decode(self, data, is_geo):
         
@@ -67,7 +74,7 @@ class MatchBuyerExecutor(object):
                 self.geo_indstury_ids[geo_indstury_id]['seller'] = []
                     
             if data['type'] == 'buyer':  
-                self.geo_indstury_ids[geo_indstury_id]['buyers'].append(BuyersWithScore(data['id'], score))
+                self.geo_indstury_ids[geo_indstury_id]['buyers'].append((data['id'], score))
             else:
                 self.geo_indstury_ids[geo_indstury_id]['seller'].append(data['id'])
     
