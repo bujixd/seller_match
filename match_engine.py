@@ -7,7 +7,6 @@ import json
 from pprint import pprint
 from collections import defaultdict
 import getopt, sys
-from itertools import combinations
 
 class BuyersWithScore(object):
     
